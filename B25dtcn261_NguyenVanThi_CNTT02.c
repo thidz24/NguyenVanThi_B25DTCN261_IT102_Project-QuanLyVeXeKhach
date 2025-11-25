@@ -18,7 +18,7 @@ struct Trip {
     int bookedSeats; // So ghe da dat
 };
 // Danh sach Trip
-struct Trip sampleTrips[5] = {
+struct Trip trips[MAX_TRIPS] = {
     {
         "TX001",
         {"Ha Noi", "So 1 Trang Tien, Hoan Kiem, Ha Noi"},
@@ -76,8 +76,7 @@ struct Ticket {
 };
 
 // Gan gia tri
-struct Trip trips[MAX_TRIPS];
-int tripCount = 0;
+int tripCount = 5;
 
 // khai bao ham
 void clearInputBuffer();
@@ -106,10 +105,10 @@ int main() {
                 addTrip();
                 break;
             case 2:
-                    updateTripInfo();
+                updateTripInfo();
                 break;
             case 3:
-                    bookTicket();
+                bookTicket();
                 break;
             case 9:
                 printf("Thoat chuong trinh...!\n");
@@ -120,7 +119,7 @@ int main() {
     }
     return 0;
 }
-// Function definitions (viet phan than ham o duoi)
+// Ham xoa buffer 
 void clearInputBuffer() {
     int c;
     while ((c = getchar()) != '\n' && c != EOF);
@@ -178,7 +177,7 @@ void showMenu() {
     }
 }
 
-// Ham them chuyen xe moi voi thong bao thanh cong/that bai ro rang
+// Ham them chuyen xe moi voi
 void addTrip() {
     if (tripCount >= MAX_TRIPS) {
         printf("Them chuyen xe that bai: Danh sach chuyen xe da day.\n");
@@ -336,7 +335,6 @@ void updateTripInfo() {
     }
 }
 
-// Ham dat ve
 
 // Ham kiem tra so dien thoai (chi cho phep so va do dai tu 8-15)
 int isValidPhone(const char* phone) {

@@ -73,7 +73,7 @@ struct Ticket {
     int seatNumber; // so ghe da dat
     double price; // Gia ve
     int paymentStatus; // Trang thai thanh toan (0: chua thanh toan,1: da thanh toan)
-    char date[32]; // Ngay gio dat ve (fix: tang size de tu dong sinh chuoi ngay gio tu time)
+    char date[32]; // Ngay gio dat ve 
 };
 // danh sach ticket 
 struct Ticket tickets[MAXTICKETS] = {
@@ -233,7 +233,7 @@ void showMenu() {
     }
 }
 
-// Ham them chuyen xe moi voi
+// Ham them chuyen xe moi
 void addTrip() {
     if (tripCount >= MAX_TRIPS) {
         printf("Them chuyen xe that bai: Danh sach chuyen xe da day.\n");

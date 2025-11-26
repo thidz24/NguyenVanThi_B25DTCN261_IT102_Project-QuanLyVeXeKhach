@@ -128,7 +128,6 @@ int ticketCount = 5;
 int tripCount = 5;
 
 // khai bao ham
-void clearInputBuffer();
 void inputString(char *prompt, char *str, int size);
 int isTripIdUnique(const char *tripId);
 int isEmptyString(const char *str);
@@ -146,13 +145,8 @@ int main() {
     while(1){
         showMenu();
         printf("Moi ban nhap lua chon: ");
-        char choiceBuf[32];
-        if (fgets(choiceBuf, sizeof(choiceBuf), stdin) == NULL) {
-            printf("Loi! Vui long thu lai\n");
-            clearInputBuffer();
-            continue;
-        }
-        choice = atoi(choiceBuf);
+        scanf("%d",&choice);
+        getchar();
         switch(choice){
             case 1:
                 addTrip();
@@ -174,11 +168,6 @@ int main() {
         }
     }
     return 0;
-}
-// Ham xoa buffer 
-void clearInputBuffer() {
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF);
 }
 
 // Giup nhap chuoi voi loai bo dau '\n' cuoi

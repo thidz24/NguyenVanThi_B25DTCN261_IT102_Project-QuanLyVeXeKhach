@@ -73,6 +73,7 @@ struct Ticket {
     double price; // gia ve
     int paymentStatus; // trang thai thanh toan (0: chua thanh toan, 1: da thanh toan)
     char date[32]; // ngay gio dat ve
+    int status; // 0:chua thanh toan, 1:huy, 2:khoa 
 };
 struct Ticket tickets[MAXTICKETS] = {
     {
@@ -406,7 +407,7 @@ int isSeatBooked(const char* tripId, int seatNumber, struct Ticket* tickets, int
     return 0;
 }
 
-void bookTicket() { // Chuc nang dat ve
+void bookTicket() { // Chuc nang dat ve khong dau
     extern struct Ticket tickets[];
     extern int ticketCount;
 
@@ -469,9 +470,7 @@ void bookTicket() { // Chuc nang dat ve
             printf("So dien thoai khong dung dinh dang hoac khong hop le!\n");
             continue;
         }
-		break;  
-	} 
-	while(1){
+
         char tempSeat[16];
         int seatNumber;
         printf("Nhap so ghe (1-%d): ", trips[tripIdx].totalSeats);
@@ -486,10 +485,6 @@ void bookTicket() { // Chuc nang dat ve
             printf("So ghe nay da duoc dat trong chuyen xe nay!\n");
             continue;
         }
-        break;
-	}
-	while(1){
-		int seatNumber; 
         newTicket.seatNumber = seatNumber;
 
         newTicket.paymentStatus = 0;
@@ -560,64 +555,68 @@ void checkTicketStatus(struct Ticket tickets[], int ticketCount, struct Trip tri
     printf("Khong tim thay ve!\n");
 }
 
-void listTrips() { // ham liet ke chuyen xe
-    int pageNumber = 1, pageSize = 10; // trang hien tai và so dong moi trang
+// Hien thi danh sach
+void listTrips() {
+    int pageNumber = 1, pageSize = 10;
     char input[32];
 
-    if (tripCount == 0) {
-        printf("Danh sach rong\n"); // thong bao neu khong co chuyen xe
+    if (tripCount <= 0) {
+        printf("Khong co chuyen xe de hien thi\n");
         return;
     }
+
+    // Nhap so dong moi trang (pageSize)
+    printf("Nhap so dong moi trang (mac dinh 10, nhan Enter de bo qua): ");
+    fgets(input, sizeof(input), stdin);
+    if (sscanf(input, "%d", &pageSize) != 1 || pageSize <= 0) pageSize = 10;
+
+    // Nhap so trang muon xem (pageNumber)
+    printf("Nhap so trang muon xem (mac dinh 1, nhan Enter de bo qua): ");
+    fgets(input, sizeof(input), stdin);
+    if (sscanf(input, "%d", &pageNumber) != 1 || pageNumber <= 0) pageNumber = 1;
+
+    int totalPages = (tripCount + pageSize - 1) / pageSize;
+    if (totalPages <= 0) totalPages = 1; // Phong khi du lieu loi
+
     while (1) {
-        int totalPages = (tripCount + pageSize - 1) / pageSize; // tinh so trang
-        if (pageNumber == 1) {
-            printf("Nhap so dong: ");
-            fgets(input, sizeof(input), stdin);
-            if (sscanf(input, "%d", &pageSize) != 1 || pageSize <= 0) pageSize = 10;
-
-            printf("Nhap so trang: ");
-            fgets(input, sizeof(input), stdin);
-            if (sscanf(input, "%d", &pageNumber) != 1 || pageNumber <= 0) pageNumber = 1;
-        }
-
-        totalPages = (tripCount + pageSize - 1) / pageSize;
-
+        // Kiem tra tinh hop le cua so trang hien tai
         if (pageNumber <= 0 || pageNumber > totalPages) {
             printf("So trang khong hop le. Co tong cong %d trang.\n", totalPages);
             pageNumber = 1;
             continue;
         }
 
-        int startIdx = (pageNumber - 1) * pageSize; // chi so dau tung trang
-        int endIdx = startIdx + pageSize; // chi so cuoi tung trang
-        if (endIdx > tripCount) endIdx = tripCount;
+        int startIdx = (pageNumber - 1) * pageSize;
+        int endIdx = startIdx + pageSize - 1;
+        if (endIdx >= tripCount) endIdx = tripCount - 1;
 
-        printf("\n%-10s | %-20s | %-20s | %-19s | %-13s\n", "MaCX", "Noi di", "Noi den", "Ngay gio", "Da dat/Tong");
+        // Hien thi tieu de bang
+        printf("\n%-10s | %-20s | %-20s | %-19s | %-13s\n", "tripId", "Noi di", "Noi den", "Ngay gio", "Da dat/Tong");
         printf("------------------------------------------------------------------------------------\n");
-        for (int i = startIdx; i < endIdx; ++i) {
+        // Hien thi du lieu cua trang hien tai
+        for (int i = startIdx; i <= endIdx; ++i) {
             printf("%-10s | %-20s | %-20s | %-19s | %3d/%-8d\n",
-                trips[i].tripId,
-                trips[i].departure.name,
-                trips[i].destination.name,
-                trips[i].date,
-                trips[i].bookedSeats,
-                trips[i].totalSeats
-            );
+                   trips[i].tripId,
+                   trips[i].departure.name,
+                   trips[i].destination.name,
+                   trips[i].date,
+                   trips[i].bookedSeats,
+                   trips[i].totalSeats);
         }
         printf("Trang %d / %d\n", pageNumber, totalPages);
 
-        printf("\nNhap 'n' (Next), 'p' (Previous), 'q' (Quit), hoac so trang di chuyen: ");
+        // Yeu cau chuyen trang
+        printf("\nNhap 'n' (Next), 'p' (Previous), 'q' (Quit), hoac so trang de chuyen: ");
         fgets(input, sizeof(input), stdin);
-
-        input[strcspn(input, "\n")] = 0; // loai bo ky tu xuong dong
+        input[strcspn(input, "\n")] = 0;
 
         if (strcmp(input, "q") == 0 || strcmp(input, "Q") == 0) {
             break;
         } else if (strcmp(input, "n") == 0 || strcmp(input, "N") == 0) {
-            if (pageNumber < totalPages) ++pageNumber;
+            if (pageNumber < totalPages) pageNumber++;
             else printf("Da o trang cuoi cung!\n");
         } else if (strcmp(input, "p") == 0 || strcmp(input, "P") == 0) {
-            if (pageNumber > 1) --pageNumber;
+            if (pageNumber > 1) pageNumber--;
             else printf("Da o trang dau tien!\n");
         } else {
             int newPage = 0;
@@ -631,7 +630,7 @@ void listTrips() { // ham liet ke chuyen xe
     }
 }
 
-// Ham tim kiem ve theo ticketId
+// Ham tim kiem ve theo ticketId (khong dau)
 int findTicketIndexById(const char* ticketId) {
     for (int i = 0; i < ticketCount; ++i) {
         if (strcmp(tickets[i].ticketId, ticketId) == 0) {
@@ -641,39 +640,41 @@ int findTicketIndexById(const char* ticketId) {
     return -1;
 }
 
-// Chuc nang thanh toan ve
+// Chuc nang thanh toan 
 void payTicket() {
     char ticketId[25];
     printf("Nhap ma ve can thanh toan: ");
     fgets(ticketId, sizeof(ticketId), stdin);
-    ticketId[strcspn(ticketId, "\n")] = 0; // xoa ky tu newline
+    ticketId[strcspn(ticketId, "\n")] = 0; // Xoa ky tu newline
 
-    // Kiem tra ticketId rong
+    // Validation: ticketId khong duoc de trong
     if (strlen(ticketId) == 0) {
         printf("Ma ve khong duoc de trong\n");
         return;
     }
 
+    // Tim vi tri ve theo ticketId
     int idx = findTicketIndexById(ticketId);
 
+    // Validation: ticketId phai ton tai trong danh sach ve
     if (idx == -1) {
         printf("Khong tim thay ve\n");
         return;
     }
 
-    // Kiem tra trang thai ve (gia dinh: status = 0 hop le, 1: da huy, 2: da khoa)
-    if (tickets[idx].paymentStatus == 1 || tickets[idx].paymentStatus == 2) {
+    // Validation: Ve chua bi khoa/huy moi duoc thanh toan (status = 0: hop le, 1: da huy, 2: da khoa)
+    if (tickets[idx].status == 1 || tickets[idx].status == 2) {
         printf("Ve khong the thanh toan vi da bi vo hieu hoa\n");
         return;
     }
 
-    // Kiem tra paymentStatus
+    // Validation: paymentStatus phai = 0 (chua thanh toan)
     if (tickets[idx].paymentStatus == 1) {
         printf("Ve da thanh toan truoc do\n");
         return;
     }
 
-    // Xu ly thanh toan
+    // Logic xu ly thanh toan: hop le -> cap nhat paymentStatus = 1
     tickets[idx].paymentStatus = 1;
     printf("Thanh toan thanh cong\n");
 }

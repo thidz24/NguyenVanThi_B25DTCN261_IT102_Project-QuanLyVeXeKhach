@@ -139,6 +139,8 @@ int isSeatBooked(const char* tripId, int seatNumber, struct Ticket* tickets, int
 void checkTicketStatus(struct Ticket tickets[], int ticketCount, struct Trip trips[], int tripCount); // kiem tra tinh trang ve
 void listTrips(); // liet ke chuyen xe
 void payTicket(); // thanh toan ve
+void cancel_lockTicket(); // huy ve
+void revenue_Ticketstatistic_report(); // bao cao doanh thu va thong ke ve
 int main() { 
     int choice; // bien lua chon
     while (1) { // vong lap menu
@@ -164,6 +166,12 @@ int main() {
                 break;
             case 6:
                 payTicket(); // thanh toan ve
+                break;
+            case 7:
+                cancel_lockTicket(); // huy ve
+                break;
+            case 8:
+                revenue_Ticketstatistic_report(); // bao cao doanh thu va thong ke ve
                 break;
             case 9:
                 printf("Thoat chuong trinh...!\n"); // ket thuc
@@ -352,6 +360,7 @@ void updateTripInfo() { // ham cap nhat thong tin chuyen xe
                 inputString("Nhap tong so ghe moi: ", temp, sizeof(temp));
                 if (isEmptyString(temp)) {
                     printf("Tong so ghe khong duoc de trong.\n");
+                    printf("Moi ban nhap lai/n"); 
                     continue;
                 }
                 newTotalSeats = atoi(temp); // chuyen chuoi sang so
@@ -469,14 +478,15 @@ void bookTicket() { // Chuc nang dat ve khong dau
         if (!isValidPhone(newTicket.passenger.phone)) {
             printf("So dien thoai khong dung dinh dang hoac khong hop le!\n");
             continue;
-        }
-
+        }  
+		break;
+	}
+    int seatNumber;
+	while(1){
         char tempSeat[16];
-        int seatNumber;
         printf("Nhap so ghe (1-%d): ", trips[tripIdx].totalSeats);
         inputString("", tempSeat, sizeof(tempSeat));
         seatNumber = atoi(tempSeat);
-
         if (seatNumber < 1 || seatNumber > trips[tripIdx].totalSeats) {
             printf("So ghe phai > 0 va <= tong so ghe!\n");
             continue;
@@ -484,15 +494,25 @@ void bookTicket() { // Chuc nang dat ve khong dau
         if (isSeatBooked(trips[tripIdx].tripId, seatNumber, tickets, ticketCount)) {
             printf("So ghe nay da duoc dat trong chuyen xe nay!\n");
             continue;
+        } 
+		break;
+	} 
+    newTicket.seatNumber = seatNumber;
+
+    newTicket.paymentStatus = 0;
+
+    // Nguoi dung nhap ngay dat ve
+    while (1) {
+        inputString("Nhap ngay dat ve (yyyy-mm-dd HH:MM:SS): ", newTicket.date, sizeof(newTicket.date));
+        if (isEmptyString(newTicket.date)) {
+            printf("Ngay dat ve khong duoc de trong!\n");
+            continue;
         }
-        newTicket.seatNumber = seatNumber;
+        
+        break;
+    }
 
-        newTicket.paymentStatus = 0;
-
-        time_t now = time(NULL);
-        struct tm *tm_info = localtime(&now);
-        strftime(newTicket.date, sizeof(newTicket.date), "%Y-%m-%d %H:%M:%S", tm_info);
-
+    while (1) {
         char tempPrice[32];
         inputString("Nhap gia ve: ", tempPrice, sizeof(tempPrice));
         newTicket.price = atof(tempPrice);
@@ -679,4 +699,161 @@ void payTicket() {
     printf("Thanh toan thanh cong\n");
 }
 
+void cancel_lockTicket() {
+    char ticketId[25];
+    int action;
 
+    printf("Nhap ma ve can thao tac (huy/khoa): ");
+    fgets(ticketId, sizeof(ticketId), stdin);
+    ticketId[strcspn(ticketId, "\n")] = 0; // Xoa ky tu newline
+    
+    // Validation: ticketId khong duoc de trong
+    if (strlen(ticketId) == 0) {
+        printf("Ma ve khong duoc de trong\n");
+        return;
+    }
+
+    int idx = findTicketIndexById(ticketId);
+    if (idx == -1) {
+        printf("Khong tim thay ve\n");
+        return;
+    }
+
+    if (tickets[idx].status == 1 || tickets[idx].status == 2) {
+        printf("Ve da bi vo hieu hoa\n");
+        return;
+    }
+
+    printf("Chon thao tac: (1 = Khoa ve, 2 = Huy ve): ");
+    if (scanf("%d", &action) != 1) {
+        printf("Lua chon khong hop le\n");
+        while(getchar()!='\n'); // Clear stdin
+        return;
+    }
+    while(getchar()!='\n'); // Clear stdin
+
+    if (action == 1) { // Khoa ve
+        tickets[idx].status = 2; // Locked
+        printf("Khoa ve thanh cong\n");
+    } else if (action == 2) { // Huy ve
+        if (tickets[idx].paymentStatus == 1) {
+            printf("Khong the huy vi ve da thanh toan\n");
+            return;
+        }
+        // Tim chi so chuyen xe tuong ung va giai phong ghe
+        int tripIdx = findTripIndexById(tickets[idx].tripId);
+        if (tripIdx != -1 && trips[tripIdx].bookedSeats > 0) {
+            trips[tripIdx].bookedSeats -= 1;
+        }
+        tickets[idx].status = 1; // Canceled
+        printf("Huy ve thanh cong\n");
+    } else {
+        printf("Lua chon khong hop le\n");
+        return;
+    }
+}
+void revenue_Ticketstatistic_report() {
+    int type;
+    char fromDate[32] = "";
+    char toDate[32] = "";
+
+    printf("=== BAO CAO DOANH THU & THONG KE VE ===\n");
+    printf("Nhap loai bao cao (1 = Doanh thu, 2 = Thong ke theo chuyen xe, 3 = Theo khoang thoi gian): ");
+    if (scanf("%d", &type) != 1) {
+        printf("Loai bao cao khong hop le\n");
+        while(getchar() != '\n');
+        return;
+    }
+    while(getchar() != '\n'); // Clear stdin
+
+    if (ticketCount == 0) {
+        printf("Khong co du lieu de bao cao\n");
+        return;
+    }
+
+    if (type == 1) {
+        // CASE 1: Tong doanh thu
+        double totalRevenue = 0;
+        int paidTickets = 0;
+        for (int i = 0; i < ticketCount; ++i) {
+            if (tickets[i].paymentStatus == 1) {
+                totalRevenue += tickets[i].price;
+                paidTickets++;
+            }
+        }
+        printf("== BAO CAO DOANH THU ==\n");
+        printf("Tong doanh thu: %.0f VNÐ\n", totalRevenue);
+        printf("Tong ve da thanh toan: %d\n", paidTickets);
+    }
+    else if (type == 2) {
+        // CASE 2: Thong ke theo chuyen xe
+        printf("== THONG KE VE THEO CHUYEN XE ==\n");
+        printf("%-10s %-10s %-15s %-6s %-15s %-12s\n", 
+               "tripId", "Tong ve", "Da thanh toan", "Huy", "Con hieu luc", "Doanh thu");
+        for (int t = 0; t < tripCount; ++t) {
+            int totalTicket = 0, paid = 0, canceled = 0, valid = 0;
+            double tripRevenue = 0;
+            for (int i = 0; i < ticketCount; ++i) {
+                if (strcmp(tickets[i].tripId, trips[t].tripId) == 0) {
+                    totalTicket++;
+                    if (tickets[i].status == 1) canceled++;
+                    else if (tickets[i].status == 0) {
+                        valid++;
+                        if (tickets[i].paymentStatus == 1) {
+                            paid++;
+                            tripRevenue += tickets[i].price;
+                        }
+                    }
+                }
+            }
+            printf("%-10s %-10d %-15d %-6d %-15d %-12.0f\n",
+                trips[t].tripId, totalTicket, paid, canceled, valid, tripRevenue);
+        }
+    }
+    else if (type == 3) {
+        // CASE 3: Theo khoang thoi gian
+        printf("Nhap ngay bat dau (yyyy-mm-dd HH:MM:SS), bo qua neu khong loc theo ngay: ");
+        fgets(fromDate, sizeof(fromDate), stdin);
+        fromDate[strcspn(fromDate, "\n")] = 0;
+        printf("Nhap ngay ket thuc (yyyy-mm-dd HH:MM:SS), bo qua neu khong loc theo ngay: ");
+        fgets(toDate, sizeof(toDate), stdin);
+        toDate[strcspn(toDate, "\n")] = 0;
+
+        // Validate khoang thoi gian: fromDate <= toDate (neu ca 2 cung co du lieu)
+        int filterByDate = strlen(fromDate) > 0 && strlen(toDate) > 0;
+        if (filterByDate && strcmp(fromDate, toDate) > 0) {
+            printf("Ngay bat dau phai nho hon hoac bang ngay ket thuc\n");
+            return;
+        }
+
+        int filtered = 0, canceled = 0, valid = 0;
+        double revenue = 0;
+        for (int i = 0; i < ticketCount; ++i) {
+            int inside = 1;
+            if (strlen(fromDate) > 0 && strcmp(tickets[i].date, fromDate) < 0) inside = 0;
+            if (strlen(toDate) > 0 && strcmp(tickets[i].date, toDate) > 0) inside = 0;
+            if (inside) {
+                filtered++;
+                if (tickets[i].status == 1) canceled++;
+                else if (tickets[i].status == 0) {
+                    valid++;
+                    if (tickets[i].paymentStatus == 1)
+                        revenue += tickets[i].price;
+                }
+            }
+        }
+        if(filtered == 0){
+            printf("Khong co du lieu trong khoang thoi gian chi dinh\n");
+            return;
+        }
+        printf("== BAO CAO VE TRONG KHOANG THOI GIAN ==\n");
+        printf("Tong ve trong khoang thoi gian: %d\n", filtered);
+        printf("Tong doanh thu: %.0f VNÐ\n", revenue);
+        printf("So ve huy: %d\n", canceled);
+        printf("So ve con hieu luc: %d\n", valid);
+    }
+    else {
+        printf("Loai bao cao khong hop le\n");
+        return;
+    }
+}

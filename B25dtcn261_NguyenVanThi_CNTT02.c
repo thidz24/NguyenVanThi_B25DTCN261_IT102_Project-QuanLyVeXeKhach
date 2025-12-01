@@ -265,12 +265,12 @@ int isValidDateFormat(const char *str) {
     int dd = atoi(str+8);
     int HH = atoi(str+11);
     int MI = atoi(str+14);
-    if (yyyy < 2023 || mm < 1 || mm > 12 || dd < 1 || dd > 31 || HH < 0 || HH > 23 || MI < 0 || MI > 59)
+    if (yyyy < 0 || mm < 1 || mm > 12 || dd < 1 || dd > 31 || HH < 0 || HH > 23 || MI < 0 || MI > 59)
         return 0;
     return 1;
 }
 
-// Them chuyen xe moi
+// Them chuyen xe moi 
 void addTrip() {
     if (tripCount >= MAX_TRIPS) {
         printf("Them chuyen xe that bai: Danh sach chuyen xe da day.\n");
@@ -284,7 +284,8 @@ void addTrip() {
         if (strlen(temp) > 19) valid = 0;
         for (int i = 0; temp[i]; ++i)
             if (!isalnum((unsigned char)temp[i])){
-                valid = 0; break;
+                valid = 0;
+				break;
             }
         if (!valid) {
             printf("Ma chuyen xe chi duoc gom chu so va chu cai, khong khoang trang, toi da 19 ky tu. Vui long nhap lai.\n");

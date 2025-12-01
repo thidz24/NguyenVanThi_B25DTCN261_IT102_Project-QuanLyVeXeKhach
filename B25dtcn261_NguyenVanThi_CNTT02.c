@@ -137,14 +137,30 @@ int main() {
             continue;
         }
         switch (choice) {
-            case 1: addTrip(); break;
-            case 2: updateTripInfo(); break;
-            case 3: bookTicket(); break;
-            case 4: checkTicketStatus(tickets, ticketCount, trips, tripCount); break;
-            case 5: listTrips(); break;
-            case 6: payTicket(); break;
-            case 7: cancel_lockTicket(); break;
-            case 8: revenue_Ticketstatistic_report(); break;
+            case 1: 
+			addTrip(); 
+			break;
+            case 2: 
+			updateTripInfo(); 
+			break;
+            case 3: 
+			bookTicket(); 
+			break;
+            case 4: 
+			checkTicketStatus(tickets, ticketCount, trips, tripCount); 
+			break;
+            case 5: 
+			listTrips(); 
+			break;
+            case 6: 
+			payTicket(); 
+			break;
+            case 7: 
+			cancel_lockTicket(); 
+			break;
+            case 8: 
+			revenue_Ticketstatistic_report(); 
+			break;
             case 9: 
                 printf("Thoat chuong trinh...!\n");
                 return 0;

@@ -614,7 +614,6 @@ void bookTicket() {
         break;
     }
     struct Ticket newTicket;
-    memset(&newTicket, 0, sizeof(struct Ticket));
     strncpy(newTicket.tripId, trips[tripIdx].tripId, sizeof(newTicket.tripId) - 1);
     newTicket.tripId[sizeof(newTicket.tripId) - 1] = '\0';
     while (1) {
